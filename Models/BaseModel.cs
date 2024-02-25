@@ -13,7 +13,7 @@ namespace ServerlessLogin.Models
 
         public BaseModel()
         {
-           Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid().ToString();
         }
 
     }

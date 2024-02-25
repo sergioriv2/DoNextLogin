@@ -16,6 +16,7 @@ namespace ServerlessLogin.Controllers
     [TypeFilter(typeof(AuthExceptionFilter))]
     public class AuthController : Controller
     {
+        private readonly IGoogleAuthRepository _googleAuthRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailRepository _emailRepository;
         private readonly IJwtManagerRepository _jwtManagerRepository;
@@ -25,11 +26,13 @@ namespace ServerlessLogin.Controllers
             IUserRepository userRepository,
             IEmailRepository emailRepository,
             IJwtManagerRepository jwtManagerRepository,
+            IGoogleAuthRepository googleAuthRepository,
             IMapper mapper)
         {
             _userRepository = userRepository;
             _emailRepository = emailRepository;
             _jwtManagerRepository = jwtManagerRepository;
+            _googleAuthRepository = googleAuthRepository;
             _mapper = mapper;
         }
 
@@ -53,6 +56,8 @@ namespace ServerlessLogin.Controllers
 
                 string emailCode = _userRepository.CreateRandomCode();
 
+                Console.WriteLine("Email Code: " + emailCode);
+
                 ValidationCode validationCode = await _userRepository
                     .CreateValidationCode(
                         userMap,
@@ -62,7 +67,7 @@ namespace ServerlessLogin.Controllers
 
                 await _userRepository.Save();
                 await _emailRepository.SendValidationCodeEmail(userMap, emailCode);
-                
+
                 return StatusCode(201, response);
             }
             catch (Exception ex)
@@ -120,7 +125,8 @@ namespace ServerlessLogin.Controllers
                 await _userRepository.Save();
 
                 return Ok(mappedResponse);
-            } catch
+            }
+            catch
             {
                 throw;
             }
@@ -173,7 +179,21 @@ namespace ServerlessLogin.Controllers
             {
                 throw;
             }
-           
+
+        }
+
+        [HttpPost("validate-jwt/google", Name = "ValidateGoogleJWT")]
+        public async Task<ActionResult> ValidateGoogleJWT(
+            [FromBody]
+            ValidateGoogleJWTDto payload
+        )
+        {
+            var googleTokenPayload = await this._googleAuthRepository.VerifyGoogleToken(payload.token);
+
+            var tokens = _jwtManagerRepository.GenerateJWT(googleTokenPayload.Email);
+            var mappedResponse = _mapper.Map<Tokens, LoginResponseDto>(tokens);
+
+            return Ok(mappedResponse);
         }
     }
 }

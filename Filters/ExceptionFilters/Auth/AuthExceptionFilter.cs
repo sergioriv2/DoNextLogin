@@ -88,6 +88,20 @@ namespace ServerlessLogin.Filters.ExceptionFilters.Auth
                                 }
                             );
                         break;
+                    case CustomValidationCodes.InvalidGoogleToken:
+                        httpStatusCode = (int)HttpStatusCode.Unauthorized;
+                        httpStatusDescription = Status.fromInt(httpStatusCode).Description;
+                        errorsResponse.Add(
+                                new APIResponseError()
+                                {
+                                    Property = "Token",
+                                    Constraints = new
+                                    {
+                                        InvalidCode = CustomValidationExceptionsDictionary.Messages[validationEx.ExceptionCode]
+                                    }
+                                }
+                            );
+                        break;
                     default:
                         break;
                 }

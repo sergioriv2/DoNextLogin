@@ -21,6 +21,7 @@
         InvalidEmailCode = 1004,
         InvalidRefreshToken = 1005,
         ExpiredAccessOrRefreshToken = 1006,
+        InvalidGoogleToken = 1007,
         // User -- 200x
         UserNotFound = 2001,
     }
@@ -49,6 +50,9 @@
             },
             {
                  CustomValidationCodes.ExpiredAccessOrRefreshToken, "Expired refresh token or access token."
+            },
+            {
+                 CustomValidationCodes.InvalidGoogleToken, "Invalid google token."
             }
         };
     }

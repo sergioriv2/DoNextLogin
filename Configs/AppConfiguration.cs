@@ -133,6 +133,7 @@ namespace ServerlessLogin.Configs
 
             // Repositories
             Services.AddScoped<IUserRepository, UserRepository>();
+            Services.AddScoped<IGoogleAuthRepository, GoogleAuthRepository>();
         }
 
         private void ConfigureDatabase()
