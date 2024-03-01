@@ -22,6 +22,8 @@
         InvalidRefreshToken = 1005,
         ExpiredAccessOrRefreshToken = 1006,
         InvalidGoogleToken = 1007,
+        ErrorValidatingReCaptcha = 1008,
+        LowOrUnsuccessfullReCaptchaScore = 1009,
         // User -- 200x
         UserNotFound = 2001,
     }
@@ -53,6 +55,12 @@
             },
             {
                  CustomValidationCodes.InvalidGoogleToken, "Invalid google token."
+            },
+            {
+                 CustomValidationCodes.LowOrUnsuccessfullReCaptchaScore, "The score from the recaptcha score is low or the validation was unsuccessful."
+            },
+            {
+                 CustomValidationCodes.ErrorValidatingReCaptcha, "There was an error while attempting to validate the recaptcha code."
             }
         };
     }

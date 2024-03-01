@@ -195,5 +195,20 @@ namespace ServerlessLogin.Controllers
 
             return Ok(mappedResponse);
         }
+
+        [HttpPost("validate-recaptcha", Name = "ValidateReCaptchaToken")]
+        public async Task<ActionResult> ValidateReCaptchaToken(
+            [FromBody]
+            ValidateGoogleJWTDto payload
+        )
+        {
+            await this._googleAuthRepository.VerifyReCaptchaV3Token(payload.token);
+            var response = new ValidateReCaptchaResponseDto()
+            {
+                Success = true
+            };
+
+            return Ok(response);
+        }
     }
 }

@@ -49,7 +49,6 @@ namespace ServerlessLogin.Configs
                     options =>
                     {
                         var Key = Encoding.UTF8.GetBytes(Builder.Configuration.GetValue<string>("JWT:AccessKey"));
-                        Console.WriteLine("Key: " + Builder.Configuration.GetValue<string>("JWT:AccessKey"));
                         options.SaveToken = true;
                         options.TokenValidationParameters = new TokenValidationParameters()
                         {
