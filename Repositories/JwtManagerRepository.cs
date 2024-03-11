@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using ServerlessLogin.Data;
 using ServerlessLogin.Filters;
 using ServerlessLogin.Interfaces;
@@ -79,11 +80,9 @@ namespace ServerlessLogin.Repositories
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
         public Tokens GenerateJWT(string username)
@@ -94,6 +93,79 @@ namespace ServerlessLogin.Repositories
         public Tokens GenerateRefreshToken(string username)
         {
             return GenerateTokens(username);
+        }
+
+        public async Task<SecurityKey> GetIssuerSigningKey(string jwksUri, string kid)
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetStringAsync(jwksUri);
+
+            // Parse JWKS to JSON
+            var jwks = JsonConvert.DeserializeObject<JsonWebKeySet>(response);
+            var webKey = jwks.Keys.Where(x => x.Kid == kid).First() ?? throw new Exception("Error obtaining KID");
+
+            var signingKey = new JsonWebKey()
+            {
+                Kty = webKey.Kty,
+                Kid = webKey.Kid,
+                Use = webKey.Use,
+                Alg = webKey.Alg,
+                K = webKey.K,
+                X = webKey.X,
+                Y = webKey.Y,
+                N = webKey.N,
+                E = webKey.E,
+                P = webKey.P,
+                Q = webKey.Q,
+                DP = webKey.DP,
+                DQ = webKey.DQ,
+                QI = webKey.QI,
+                X5t = webKey.X5t,
+                X5u = webKey.X5u,
+            };
+
+            return signingKey;
+        }
+
+        public async Task<MicrosoftApplicationUser> ValidateMicrosoftToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.ReadJwtToken(token);
+            var headers = jwtToken.Header.ToDictionary(k => k.Key, v => v.Value);
+
+            var issuerSigningKey = await GetIssuerSigningKey(
+                $"https://login.microsoftonline.com/{_configuration["AzureAd:TenantId"]}/discovery/v2.0/keys",
+                 headers.TryGetValue("kid", out var kid) ? kid.ToString() : ""
+                );
+
+            if (issuerSigningKey == null)
+            {
+                throw new Exception("Error at: Issuer Signing Key");
+            }
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = issuerSigningKey,
+                ValidateIssuer = true,
+                ValidIssuer = $"https://login.microsoftonline.com/{_configuration["AzureAd:TenantId"]}/v2.0",
+                ValidateAudience = true,
+                ValidAudience = _configuration["AzureAd:ClientId"],
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            try
+            {
+                var claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                var microsoftClaims = new MicrosoftApplicationUser(claimsPrincipal);
+
+                return microsoftClaims;
+            }
+            catch
+            {
+                throw new Exception("Error at: Authenticating microsoft token");
+            }
         }
 
 

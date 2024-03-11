@@ -189,12 +189,28 @@ namespace ServerlessLogin.Controllers
         )
         {
             var googleTokenPayload = await this._googleAuthRepository.VerifyGoogleToken(payload.token);
+            var userExist = await _userRepository.GetUserByEmail(googleTokenPayload.Email);
+
+            if (userExist == null)
+            {
+                User newUser = new User()
+                {
+                    Email = googleTokenPayload.Email,
+                    FirstName = googleTokenPayload.GivenName,
+                    LastName = googleTokenPayload.FamilyName,
+                    Password = "Automated.Password123",
+                };
+
+                await _userRepository.CreateUser(newUser);
+                await _userRepository.Save();
+            }
 
             var tokens = _jwtManagerRepository.GenerateJWT(googleTokenPayload.Email);
             var mappedResponse = _mapper.Map<Tokens, LoginResponseDto>(tokens);
 
             return Ok(mappedResponse);
         }
+
 
         [HttpPost("validate-recaptcha", Name = "ValidateReCaptchaToken")]
         public async Task<ActionResult> ValidateReCaptchaToken(
@@ -209,6 +225,44 @@ namespace ServerlessLogin.Controllers
             };
 
             return Ok(response);
+        }
+ 
+        [HttpPost("validate-jwt/microsoft", Name = "ValidateMicrosoftJWT")]
+        public async Task<ActionResult> ValidateMicrosoftJWT(
+             [FromBody]
+            ValidateMicrosoftJWTDto payload
+            )
+        {
+
+            try
+            {
+                var microsoftTokenPayload = await this._jwtManagerRepository.ValidateMicrosoftToken(payload.token);
+                var userExist = await _userRepository.GetUserByEmail(microsoftTokenPayload.Email);
+
+                if (userExist == null)
+                {
+                    User newUser = new User()
+                    {
+                        Email = microsoftTokenPayload.Email,
+                        FirstName = microsoftTokenPayload.Name.Split(' ')[0],
+                        LastName = microsoftTokenPayload.Name.Split(' ')[1],
+
+                        Password = "Automated.Password123",
+                    };
+
+                    await _userRepository.CreateUser(newUser);
+                    await _userRepository.Save();
+                }
+
+                var tokens = _jwtManagerRepository.GenerateJWT(microsoftTokenPayload.Email);
+                var mappedResponse = _mapper.Map<Tokens, LoginResponseDto>(tokens);
+
+                return Ok(mappedResponse);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            } 
         }
     }
 }

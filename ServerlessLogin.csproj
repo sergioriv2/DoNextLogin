@@ -19,6 +19,7 @@
   <ItemGroup>
 	<PackageReference Include="Google.Apis.Auth" Version="1.67.0" />
 	<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
+	<PackageReference Include="Microsoft.Identity.Web" Version="2.17.0" />
 	<PackageReference Include="System.Collections" Version="4.3.0" />
 	<PackageReference Include="System.Threading" Version="4.3.0" />
 	<PackageReference Include="System.IO" Version="4.3.0" />

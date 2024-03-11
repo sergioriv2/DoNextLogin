@@ -9,4 +9,9 @@ namespace ServerlessLogin.Dtos.Auth
     {
         public bool Success { get; set; }
     }
+
+    public class ValidateMicrosoftJWTDto
+    {
+        public string token { get; set; } = string.Empty;
+    }
 }
